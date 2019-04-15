@@ -1,11 +1,11 @@
 'use strict'
 
 const { dom, json } = require('fs-request-cache')
-const fs = require('fs')
+const fs = require('fs-extra')
 const Parallel = require('async-parallel')
 const { Parser: Json2csvParser } = require('json2csv')
 const { format } = require('date-fns')
-const { flat } = require('lodash')
+const { flatten } = require('lodash')
 
 const getSalaries = require('./get-salaries')
 
@@ -111,6 +111,7 @@ const getJobs = async (url, salaryMap) => {
 }
 
 const main = async () => {
+  fs.ensureDirSync('./snapshots')
   const usdClpUrl = 'http://data.fixer.io/api/latest?access_key=d52e0bc3c567f84aeaf162b15d6102c5'
   const { rates, base } = await json(usdClpUrl, { ttl })
   if (base !== 'EUR') throw Error(`Currency isn't EUR`)
@@ -130,7 +131,7 @@ const main = async () => {
   const months = 1000 * 3600 * 24 * 30 * 1 // last digit
   const dateFilter = j => j.msDate > Date.now() - months
 
-  const filtered = flat(allJobs
+  const filtered = flatten(allJobs)
     .filter(j => j.salaryAvg && dateFilter(j))
     .sort((a, b) => b.salaryAvg - a.salaryAvg)
     .map(j => ({
@@ -140,7 +141,6 @@ const main = async () => {
       parsedDate: undefined
     }))
     .filter(j => j.salaryAvg > 500000)
-  )
 
   try {
     const parser = new Json2csvParser({ withBOM: true })
