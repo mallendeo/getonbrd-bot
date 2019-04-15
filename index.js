@@ -5,6 +5,7 @@ const fs = require('fs')
 const Parallel = require('async-parallel')
 const { Parser: Json2csvParser } = require('json2csv')
 const { format } = require('date-fns')
+const { flat } = require('lodash')
 
 const getSalaries = require('./get-salaries')
 
@@ -129,8 +130,7 @@ const main = async () => {
   const months = 1000 * 3600 * 24 * 30 * 1 // last digit
   const dateFilter = j => j.msDate > Date.now() - months
 
-  const filtered = allJobs
-    .flat()
+  const filtered = flat(allJobs
     .filter(j => j.salaryAvg && dateFilter(j))
     .sort((a, b) => b.salaryAvg - a.salaryAvg)
     .map(j => ({
@@ -140,6 +140,7 @@ const main = async () => {
       parsedDate: undefined
     }))
     .filter(j => j.salaryAvg > 500000)
+  )
 
   try {
     const parser = new Json2csvParser({ withBOM: true })
